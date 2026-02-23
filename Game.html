@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>iPad Simple Game</title>
+    <style>
+        /* CSS: レスポンシブ & タッチ最適化 */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #222;
+            font-family: sans-serif;
+            touch-action: none; /* ズームやスクロールを防止 */
+        }
+        canvas {
+            display: block;
+            background: #000;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">Score: <span id="score">0</span></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        // JavaScript: ゲームロジック
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+
+        let score = 0;
+        let player = { x: 0, y: 0, size: 40 };
+        let obstacles = [];
+
+        // iPadの画面サイズに合わせる
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+        }
+
+        // タッチ操作の設定
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            player.x = touch.clientX;
+            player.y = touch.clientY;
+        }
+
+        // 障害物の生成
+        function spawnObstacle() {
+            const size = Math.random() * 50 + 20;
+            obstacles.push({
+                x: Math.random() * canvas.width,
+                y: -size,
+                size: size,
+                speed: Math.random() * 5 + 2
+            });
+        }
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // プレイヤー描画
+            ctx.fillStyle = '#00ffcc';
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 障害物更新
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const o = obstacles[i];
+                o.y += o.speed;
+                
+                ctx.fillStyle = '#ff4444';
+                ctx.fillRect(o.x, o.y, o.size, o.size);
+
+                // 衝突判定
+                const dx = player.x - (o.x + o.size / 2);
+                const dy = player.y - (o.y + o.size / 2);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < (player.size / 2 + o.size / 2)) {
+                    score = 0; // リセット
+                    obstacles = [];
+                    break;
+                }
+
+                if (o.y > canvas.height) {
+                    obstacles.splice(i, 1);
+                    score++;
+                }
+            }
+
+            scoreElement.innerText = score;
+            if (Math.random() < 0.05) spawnObstacle();
+            requestAnimationFrame(update);
+        }
+
+        window.addEventListener('resize', resize);
+        window.addEventListener('touchstart', handleTouch);
+        window.addEventListener('touchmove', handleTouch);
+        
+        resize();
+        update();
+    </script>
+</body>
+</html>
